@@ -1,0 +1,27 @@
+<!doctype html>
+<title>Capstone Project</title>
+<div class="row">
+    <div class="col-sm-6">
+        <h1>Capstone Project 🔥</h1>
+        <h2 class="lead">Full Stack Nano Degree Capstone Project</h2>
+        <br>
+        <div class="row">
+            <h3>JWT TOKEN: <span id="jwt_token"></span></h3>
+            <h4>If the above token is expired, generate new token by hitting the <a href={{url}}>URL</a></h4>
+        </div>
+
+        <br>
+
+    </div>
+</div>
+<script>
+    function get_jwt_token(){
+        let jwt_token = window.location.hash.substring(window.location.hash.indexOf('#access_token')
+            + "#access_token".length + 1, window.location.hash.indexOf('&'));
+        if (!jwt_token) {
+            jwt_token = "Please <a href={{url}}>login</a> to generate access token using credentials provided in README"
+        }
+        return jwt_token
+    }
+    document.getElementById("jwt_token").innerHTML = get_jwt_token(77);
+</script>

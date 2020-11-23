@@ -1,0 +1,9 @@
+export DATABASE_URL='postgresql://postgres@localhost:5432/capstone'
+export AUTH0_CLIENT_ID='fgRMvF3Jw9eQmPdp2ysJBAsqKBG32Pqo'
+export AUTH0_CLIENT_SECRET='6ansGdalRzXXIMoVeSzPwdPdqihliZQIR3D-KGpwdJJ7BNarPSvC8rQSD1QnAHd8'
+export AUTH0_DOMAIN='fsnd-sahil.us.auth0.com'
+export API_AUDIENCE='fsnd'
+export ENV='development'
+export FLASK_APP=app
+export FLASK_DEBUG=True
+export CALLBACK_URL='http://localhost:5000'
