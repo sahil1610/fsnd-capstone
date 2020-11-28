@@ -1,5 +1,6 @@
-from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
+from flask_script import Manager
+
 from app import create_app
 from models import db, Actor, Movie
 
@@ -13,6 +14,10 @@ manager.add_command('db', MigrateCommand)
 
 @manager.command
 def add_test_data():
+    """
+    Manager command to seed some test data
+    :return:
+    """
     Movie(title='Ludo', release_date='2020-07-11').insert()
     Movie(title='Challang',
           release_date='2020-07-11').insert()

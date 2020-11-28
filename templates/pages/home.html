@@ -7,15 +7,17 @@
         <br>
         <div class="row">
             <h3>JWT TOKEN: <span id="jwt_token"></span></h3>
-            <h4>If the above token is expired, generate new token by hitting the <a href={{url}}>URL</a></h4>
+            <h4>If the above token is expired, generate new token by hitting the <a href={{ url }}>URL</a></h4>
         </div>
 
         <br>
-
+        <button><a
+                href="https://{{ domain }}/v2/logout?client_id={{ client_id }}&returnTo={{ callback_url }}">Logout</a>
+        </button>
     </div>
 </div>
 <script>
-    function get_jwt_token(){
+    function get_jwt_token() {
         let jwt_token = window.location.hash.substring(window.location.hash.indexOf('#access_token')
             + "#access_token".length + 1, window.location.hash.indexOf('&'));
         if (!jwt_token) {
@@ -23,5 +25,6 @@
         }
         return jwt_token
     }
+
     document.getElementById("jwt_token").innerHTML = get_jwt_token(77);
 </script>

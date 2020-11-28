@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 import os
 
-from auth.auth import AuthError, requires_auth
 from flask import Flask, request, abort, jsonify, render_template
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+
+from auth.auth import AuthError, requires_auth
 from models import setup_db, Movie, Actor
 
 db = SQLAlchemy()
 
 
 def create_app(test_config=None):
+    # create app
     app = Flask(__name__)
     setup_db(app)
-    cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     @app.after_request
     def after_request(response):
@@ -27,15 +29,23 @@ def create_app(test_config=None):
 
     @app.route('/')
     def home_page():
+        """
+        Home page route
+        :return:
+        """
         AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
         AUTH0_CALLBACK_URL = os.getenv("CALLBACK_URL")
         API_AUDIENCE = os.getenv("API_AUDIENCE")
         CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
         url = (
             f'https://{AUTH0_DOMAIN}/authorize?audience={API_AUDIENCE}&response_type=token&client_id={CLIENT_ID}'
-            f'&redirect_uri={AUTH0_CALLBACK_URL}'
-        )
-        return render_template('pages/home.html', url=url)
+            f'&redirect_uri={AUTH0_CALLBACK_URL}')
+        return render_template(
+            'pages/home.html',
+            url=url,
+            domain=AUTH0_DOMAIN,
+            client_id=CLIENT_ID,
+            callback_url=AUTH0_CALLBACK_URL)
 
         # return f'If the JWT tokens in the downloaded project folder expired please follow the README.txt for ' \
         #        f'instructions and request new JWT tokens at this URL: {url}'
@@ -43,6 +53,11 @@ def create_app(test_config=None):
     @app.route('/api/movie', methods=['GET'])
     @requires_auth('get:movie')
     def get_movies(payload):
+        """
+        API end point to get movie details
+        :param payload: Payload
+        :return: JSON response
+        """
         movies = Movie.query.all()
         if len(movies) == 0:
             abort(404, 'No movie present, please add movies using the API')
@@ -57,8 +72,13 @@ def create_app(test_config=None):
             abort(422, str(e))
 
     @app.route('/api/actor', methods=['GET'])
-    # @requires_auth('get:actor')
-    def get_actors():
+    @requires_auth('get:actor')
+    def get_actors(payload):
+        """
+        API end point to get the list of actors
+        :param payload: Payload
+        :return: JSON response
+        """
         actors = Actor.query.all()
         if len(actors) == 0:
             abort(404, 'No actor present, please add movies using the API')
@@ -75,6 +95,16 @@ def create_app(test_config=None):
     @app.route('/api/movie', methods=['POST'])
     @requires_auth('post:movie')
     def add_movie(payload):
+        """
+        API end point to post a new movie
+        Valid JSON body:
+        {
+            "title": "Ludo",
+            "release_date: "2020-10-10"
+        }
+        :param payload: Payload
+        :return: JSON response
+        """
         body = request.get_json()
         if not body:
             # posting an empty json should return a 400 error.
@@ -85,7 +115,9 @@ def create_app(test_config=None):
         if Movie.query.filter_by(title=body['title']).first():
             abort(409, 'Movie with name ' + body['title'] + ' already exists.')
         try:
-            movie = Movie(title=body['title'], release_date=body['release_date'])
+            movie = Movie(
+                title=body['title'],
+                release_date=body['release_date'])
             movie.insert()
             return jsonify(movie.serialize())
         except Exception as e:
@@ -97,7 +129,12 @@ def create_app(test_config=None):
     @app.route('/api/movie/<int:movie_id>', methods=['DELETE'])
     @requires_auth('delete:movie')
     def delete_movie(payload, movie_id):
-
+        """
+        API end point to delete a movie
+        :param payload: Payload
+        :param movie_id: Id of the movie to be delete
+        :return: JSON response
+        """
         movie = Movie.query.filter_by(id=movie_id).one_or_none()
         if movie is None:
             abort(404, f'Movie with id: {movie_id} does not exist')
@@ -105,7 +142,7 @@ def create_app(test_config=None):
             movie.delete()
             return jsonify({
                 'success': True,
-                'deleted': str(movie_id)
+                'deleted': movie_id
             })
         except Exception as e:
             db.session.rollback()
@@ -116,6 +153,17 @@ def create_app(test_config=None):
     @app.route('/api/movie/<int:movie_id>', methods=['PATCH'])
     @requires_auth('patch:movie')
     def update_movie(payload, movie_id):
+        """
+        API end point to update a movie
+        Valid JSON body:
+        {
+            "title": "Ludo",
+            "release_date: "2020-10-10"
+        }
+        :param payload: Payload
+        :param movie_id: Id of the movie to be updated
+        :return: JSON response
+        """
         movie = Movie.query.filter_by(id=movie_id).one_or_none()
         if movie is None:
             abort(404, f'Movie with id: {movie_id} does not exist')
@@ -146,21 +194,31 @@ def create_app(test_config=None):
     @app.route('/api/actor', methods=['POST'])
     @requires_auth('post:actor')
     def add_actor(payload):
+        """
+        API end point to add an actor
+        Valid json body:
+        {
+            "name": "Amitabh Bachchan",
+            "age": 78,
+            "gender": "Male"
+        }
+        :param payload: Payload
+        :return: JSON response
+        """
         body = request.get_json()
         if not body:
             # posting an empty json should return a 400 error.
             abort(400, 'JSON passed is empty')
         if 'name' not in body.keys() or 'age' not in body.keys() or 'gender' not in body.keys():
             abort(400, 'Invalid JSON, "name" or "age" or "gender" key is not present')
-        data = {
-            'name': body['name'],
-            'age': body['age'],
-            'gender': body['gender'],
-        }
+
         if Actor.query.filter_by(name=body['name']).first():
             abort(409, 'Actor with name ' + body['name'] + ' already exists.')
         try:
-            actor = Actor(name=body['name'], age=body['age'], gender=body['gender'])
+            actor = Actor(
+                name=body['name'],
+                age=body['age'],
+                gender=body['gender'])
             actor.insert()
             return jsonify(actor.serialize())
         except Exception as e:
@@ -169,18 +227,23 @@ def create_app(test_config=None):
         finally:
             db.session.close()
 
-    @app.route('/api/actor/<int:movie_id>', methods=['DELETE'])
+    @app.route('/api/actor/<int:actor_id>', methods=['DELETE'])
     @requires_auth('delete:actor')
     def delete_actor(payload, actor_id):
-
-        movie = Actor.query.filter_by(id=actor_id).one_or_none()
-        if movie is None:
+        """
+        API end point to delete an actor
+        :param payload: Payload
+        :param actor_id: Id of an actor to be deleted
+        :return: JSON response
+        """
+        actor = Actor.query.filter_by(id=actor_id).one_or_none()
+        if actor is None:
             abort(404, f'Actor with id: {actor_id} does not exist')
         try:
-            movie.delete()
+            actor.delete()
             return jsonify({
                 'success': True,
-                'deleted': str(actor_id)
+                'deleted': actor_id
             })
         except Exception as e:
             db.session.rollback()
@@ -191,6 +254,18 @@ def create_app(test_config=None):
     @app.route('/api/actor/<int:actor_id>', methods=['PATCH'])
     @requires_auth('patch:actor')
     def update_actor(payload, actor_id):
+        """
+        API End point to update an actor details
+        Valid json body:
+        {
+            "name": "Amitabh Bachchan",
+            "age": 78,
+            "gender": "Male"
+        }
+        :param payload: Payload
+        :param actor_id: Actor if to be edited
+        :return: JSON response
+        """
         actor = Actor.query.filter_by(id=actor_id).one_or_none()
         if actor is None:
             abort(404, f'Actor with id: {actor_id} does not exist')
@@ -220,8 +295,7 @@ def create_app(test_config=None):
         finally:
             db.session.close()
 
-    # Error handling
-
+    # Error handlers
     @app.errorhandler(400)
     def bad_request(error):
         return jsonify({
